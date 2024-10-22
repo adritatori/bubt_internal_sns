@@ -19,18 +19,15 @@ const Register = () => {
 
   const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      console.error('Passwords do not match');
-      return;
-    }
     try {
       const res = await api.post('/auth/register', { name, email, password, role });
+      localStorage.setItem('token', res.data.token);
       login(res.data);
       navigate('/dashboard');
     } catch (err) {
-      console.error(err.response.data);
+      console.error('Registration error:', err.response ? err.response.data : err.message);
     }
   };
 

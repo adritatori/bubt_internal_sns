@@ -3,11 +3,15 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Profile = require('../models/Profile');
 
 // @route   POST api/auth/register
 // @desc    Register user
 // @access  Public
 router.post('/register', async (req, res) => {
+  console.log('Registration route hit');
+  console.log('Request body:', req.body);
+  
   const { name, email, password, role } = req.body;
 
   try {
@@ -27,6 +31,16 @@ router.post('/register', async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
 
     await user.save();
+    console.log('User saved:', user);
+
+    // Create a profile for the user
+    const profile = new Profile({
+      user: user.id,
+      department: 'Not specified'
+    });
+
+    await profile.save();
+    console.log('Profile created:', profile);
 
     const payload = {
       user: {
@@ -44,7 +58,7 @@ router.post('/register', async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err.message);
+    console.error('Registration error:', err);
     res.status(500).send('Server error');
   }
 });

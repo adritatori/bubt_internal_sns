@@ -31,6 +31,6 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-});
+}, { collection: 'users' }); // Specify the collection name here
 
 module.exports = mongoose.model('User', UserSchema);

@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
+    console.log('Logging in with data:', userData);
     setUser({
       token: userData.token,
       role: userData.role
