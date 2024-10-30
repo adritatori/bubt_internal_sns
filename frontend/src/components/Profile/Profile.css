@@ -1,0 +1,166 @@
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .profile-header h2 {
+    margin-bottom: 10px;
+  }
+  
+  .role, .department {
+    margin: 5px 0;
+    color: #666;
+  }
+  
+  .edit-button, button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .edit-profile-form, .add-achievement-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .edit-profile-form input, .edit-profile-form textarea,
+  .add-achievement-form input, .add-achievement-form textarea, .add-achievement-form select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .profile-details h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .tags {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .tag {
+    background-color: #f0f0f0;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+  }
+  
+  .achievements-section {
+    margin-top: 40px;
+  }
+  
+  .achievements-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+  
+  .achievement-card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background-color: #f9f9f9;
+  }
+  
+  .achievement-card h4 {
+    margin-top: 0;
+  }
+  
+  .achievement-date, .achievement-type {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .delete-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .loading, .error, .not-found {
+    text-align: center;
+    margin-top: 50px;
+    font-size: 18px;
+  }
+  
+  .error {
+    color: #f44336;
+  }
+
+  .profile-image-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px;
+    overflow: hidden;
+  }
+
+  .profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .image-upload-wrapper {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    text-align: center;
+  }
+
+  .image-upload-label {
+    color: white;
+    cursor: pointer;
+    display: block;
+    font-size: 14px;
+  }
+
+  .image-upload-input {
+    display: none;
+  }
+
+  .upload-progress {
+    height: 5px;
+    background-color: #f0f0f0;
+    margin-top: 5px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease-in-out;
+  }

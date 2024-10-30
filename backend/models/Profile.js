@@ -6,16 +6,43 @@ const ProfileSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  bio: {
+    type: String,
+    default: ''
+  },
   department: {
     type: String,
     default: 'Not specified'
   },
-  bio: {
-    type: String
+  skills: {
+    type: [String],
+    default: []
+  },
+  socialLinks: {
+    linkedin: { type: String, default: '' },
+    github: { type: String, default: '' },
+    website: { type: String, default: '' }
+  },
+  studentInfo: {
+    studentId: { type: String, default: '' },
+    batch: { type: String, default: '' },
+    cgpa: { type: Number, default: 0 }
+  },
+  teacherInfo: {
+    designation: { type: String, default: '' },
+    courses: { type: [String], default: [] },
+    researchInterests: { type: [String], default: [] },
+    officeHours: { type: String, default: '' }
+  },
+  alumniInfo: {
+    graduationYear: { type: Number, default: null },
+    currentCompany: { type: String, default: '' },
+    jobTitle: { type: String, default: '' }
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, { 
-  collection: 'profiles',
-  timestamps: true 
 });
 
 module.exports = mongoose.model('Profile', ProfileSchema);

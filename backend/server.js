@@ -1,34 +1,41 @@
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
+const connectDB = require('./config/db');
 const cors = require('cors');
-const dotenv = require('dotenv');
 
-dotenv.config();
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const postRoutes = require('./routes/postRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const achievementRoutes = require('./routes/achievementRoutes');
+const feedRoutes = require('./routes/feedRoutes');
+
+// Log the announcementRoutes to check its contents
+console.log('Announcement Routes:', announcementRoutes);
 
 const app = express();
 
-// Middleware
-app.use(express.json());
+// Connect to Database
+connectDB();
+
+// Init Middleware
+app.use(express.json({ extended: false }));
 app.use(cors());
 
-// Add this before your route definitions
-app.use((req, res, next) => {
-  console.log(`Received ${req.method} request to ${req.url}`);
-  next();
-});
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.log(err));
-
-// Routes
-app.use('/api/auth', require('./controllers/authController'));
-app.use('/api/profile', require('./controllers/profileController'));
+// Define Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/achievements', achievementRoutes);
+app.use('/api/feed', feedRoutes);
+app.use('/uploads', express.static('uploads'));
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

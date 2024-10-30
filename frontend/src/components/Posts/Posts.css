@@ -1,0 +1,84 @@
+.posts-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.create-post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.create-post-form input,
+.create-post-form textarea {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.create-post-form textarea {
+  min-height: 100px;
+}
+
+.create-post-form button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.posts-list {
+  display: grid;
+  gap: 20px;
+}
+
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+.post-card h3 {
+  margin-top: 0;
+}
+
+.post-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.post-footer button {
+  background-color: #008CBA;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.loading, .error {
+  text-align: center;
+  margin-top: 50px;
+  font-size: 18px;
+}
+
+.error {
+  color: #f44336;
+}
