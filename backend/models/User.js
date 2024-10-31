@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: 'default.jpg'
+    default: 'default.jpg' // Set a default image if no image is uploaded
   },
   followers: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -56,11 +56,16 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
       type: Date,
       default: Date.now
-    }
+    },
+    
   }],
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  profile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Profile'
   },
   studentInfo: {
     studentId: { type: String, default: '' },
@@ -89,5 +94,10 @@ UserSchema.pre('save', function(next) {
 });
 
 const User = mongoose.model('User', UserSchema);
+
+UserSchema.pre('remove', async function(next) {
+  await Profile.findOneAndRemove({ user: this._id });
+  next();
+});
 
 module.exports = User;

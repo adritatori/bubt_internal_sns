@@ -46,3 +46,8 @@ const ProfileSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Profile', ProfileSchema);
+// Add index for faster lookups
+ProfileSchema.index({ user: 1 });
+
+// Add validation to ensure one profile per user
+ProfileSchema.index({ user: 1 }, { unique: true });

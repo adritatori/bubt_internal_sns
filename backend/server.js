@@ -12,6 +12,7 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const feedRoutes = require('./routes/feedRoutes');
+const path = require('path'); 
 
 // Log the announcementRoutes to check its contents
 console.log('Announcement Routes:', announcementRoutes);
@@ -24,7 +25,7 @@ connectDB();
 // Init Middleware
 app.use(express.json({ extended: false }));
 app.use(cors());
-
+app.use(express.urlencoded({ extended: true }));
 // Define Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -34,7 +35,8 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/feed', feedRoutes);
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
+
 
 const PORT = process.env.PORT || 5000;
 
