@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../utils/api'; // Use the configured axios instance
+import api from '../utils/api';
 
 export const AuthContext = createContext();
 
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       return true;
     } catch (err) {
-      setError(err.response.data.msg);
+      setError(err.response?.data?.msg || 'Registration failed');
       return false;
     }
   };
@@ -55,8 +55,17 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       return true;
     } catch (err) {
-      setError(err.response.data.msg);
+      setError(err.response?.data?.msg || 'Login failed');
       return false;
+    }
+  };
+
+  const updateUserProfile = (profileImage) => {
+    if (user) {
+      setUser(prev => ({
+        ...prev,
+        profileImage
+      }));
     }
   };
 
@@ -79,6 +88,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         clearError,
+        updateUserProfile
       }}
     >
       {children}

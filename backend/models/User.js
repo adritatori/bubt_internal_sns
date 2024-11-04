@@ -1,14 +1,17 @@
+// models/User.js
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
   },
   password: {
     type: String,
@@ -21,7 +24,7 @@ const UserSchema = new mongoose.Schema({
   },
   profileImage: {
     type: String,
-    default: 'default.jpg' // Set a default image if no image is uploaded
+    default: 'default.jpg'
   },
   followers: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -56,8 +59,7 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
       type: Date,
       default: Date.now
-    },
-    
+    }
   }],
   createdAt: {
     type: Date,
@@ -87,17 +89,18 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-// Add any pre-save hooks or methods here if needed
-UserSchema.pre('save', function(next) {
-  console.log('Saving user:', this);
-  next();
-});
+// Create text indexes
+UserSchema.index({ name: 'text', email: 'text' });
 
-const User = mongoose.model('User', UserSchema);
-
+// Pre-remove hook
 UserSchema.pre('remove', async function(next) {
-  await Profile.findOneAndRemove({ user: this._id });
-  next();
+  try {
+    const Profile = mongoose.model('Profile');
+    await Profile.findOneAndRemove({ user: this._id });
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);

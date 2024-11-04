@@ -5,6 +5,7 @@ import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard/Dashboard';
 import UserProfile from './components/Profile/UserProfile';
+import Profile from './components/Profile/Profile';
 import EditProfile from './components/Profile/EditProfile';
 import CreatePost from './components/Posts/CreatePost';
 import TeacherAnnouncements from './components/Teacher/TeacherAnnouncements';
@@ -44,10 +45,11 @@ function App() {
               path="/profile"
               element={
                 <PrivateRoute>
-                  <UserProfile />
+                  <Profile />
                 </PrivateRoute>
               }
             />
+            <Route path="/profile/:id" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
             <Route
               path="/edit-profile"
               element={

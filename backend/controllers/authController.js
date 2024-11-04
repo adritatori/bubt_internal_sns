@@ -146,55 +146,88 @@ const authController = {
       }
     },
 
-  // Login user
-  login: async (req, res) => {
-    const { email, password } = req.body;
-
-    try {
-      let user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ msg: 'Invalid Credentials' });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ msg: 'Invalid Credentials' });
-      }
-
-      const payload = {
-        user: {
-          id: user.id
+    login: async (req, res) => {
+      const { email, password } = req.body;
+  
+      try {
+        // Find user and include all fields except password
+        let user = await User.findOne({ email })
+          .select('+password')
+          .lean();  // Convert to plain object
+  
+        if (!user) {
+          return res.status(400).json({ msg: 'Invalid Credentials' });
         }
-};
-
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: 360000 },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
+  
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          return res.status(400).json({ msg: 'Invalid Credentials' });
         }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
-    }
-  },
-
-  // Verify token and get user
-  verifyToken: async (req, res) => {
-    try {
-      const user = await User.findById(req.user.id).select('-password');
-      if (!user) { // Check if user is null
-        return res.status(401).json({ msg: 'Unauthorized' });
+  
+        // Remove password from user object
+        delete user.password;
+  
+        const payload = {
+          user: {
+            id: user._id
+          }
+        };
+  
+        jwt.sign(
+          payload,
+          process.env.JWT_SECRET,
+          { expiresIn: 360000 },
+          (err, token) => {
+            if (err) throw err;
+            // Return complete user data along with token
+            res.json({ 
+              token,
+              user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                profileImage: user.profileImage,
+                studentInfo: user.studentInfo,
+                teacherInfo: user.teacherInfo,
+                alumniInfo: user.alumniInfo
+              }
+            });
+          }
+        );
+      } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).send('Server error');
       }
-      res.json(user);
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
+    },
+  
+    // Updated verifyToken function
+    verifyToken: async (req, res) => {
+      try {
+        const user = await User.findById(req.user.id)
+          .select('-password')
+          .lean();  // Convert to plain object
+  
+        if (!user) {
+          return res.status(401).json({ msg: 'Unauthorized' });
+        }
+  
+        // Add full profile image URL if exists
+        res.json({
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          profileImage: user.profileImage,
+          studentInfo: user.studentInfo,
+          teacherInfo: user.teacherInfo,
+          alumniInfo: user.alumniInfo
+        });
+      } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      }
     }
-  }
-};
-
-module.exports = authController;
+  };
+  
+  module.exports = authController;
