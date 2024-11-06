@@ -95,7 +95,7 @@ const UserProfile = () => {
   
   if (!profile || !userInfo) return <div className="text-center p-4">No profile found</div>;
   const profileImageUrl = userInfo.profileImage 
-  ? `http://localhost:5000/uploads/${userInfo.profileImage}`
+  ? `http://localhost:5000/uploads/profiles/${userInfo.profileImage}`
   : '/api/placeholder/128/128';
   console.log(profileImageUrl)
   return (

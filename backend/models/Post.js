@@ -16,32 +16,34 @@ const PostSchema = new mongoose.Schema({
     default: 'regular'
   },
   attachments: [{
-    type: String // URL to uploaded files
+    type: String // Store file paths
   }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  comments: [
-    {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
-      content: {
-        type: String,
-        required: true
-      },
-      date: {
-        type: Date,
-        default: Date.now
-      }
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    content: {
+      type: String,
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
     }
-  ],
+  }],
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+// Add indexes for better performance
+PostSchema.index({ user: 1, createdAt: -1 });
+PostSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Post', PostSchema);

@@ -8,38 +8,63 @@ const feedController = {
     try {
       const user = await User.findById(req.user.id);
       
-      // Get posts from followed users
-      const followedUsers = user.following;
+      // Get posts from followed users and self
+      const followedUsers = [...user.following, req.user.id];
       const posts = await Post.find({ user: { $in: followedUsers } })
         .sort({ createdAt: -1 })
         .limit(10)
-        .populate('user', ['name', 'profileImage']);
+        .populate({
+          path: 'user',
+          select: 'name profileImage role'
+        })
+        .populate({
+          path: 'comments.user',
+          select: 'name profileImage role'
+        })
+        .populate({
+          path: 'likes',
+          select: 'name profileImage'
+        });
 
-      // Get relevant announcements
+      // Get relevant announcements for the user
       const announcements = await Announcement.find({
         $or: [
-          { department: user.department },
-          { targetGroups: user.batch }
+          { targetType: 'all', department: user.studentInfo?.department || user.teacherInfo?.department || user.alumniInfo?.department },
+          {
+            targetType: 'intake-section',
+            department: user.studentInfo?.department || user.teacherInfo?.department || user.alumniInfo?.department,
+            intake: user.studentInfo?.intake || user.alumniInfo?.intake,
+            section: user.studentInfo?.section || user.alumniInfo?.section
+          },
+          {
+            targetType: 'intake-only',
+            department: user.studentInfo?.department || user.teacherInfo?.department || user.alumniInfo?.department,
+            intake: user.studentInfo?.intake || user.alumniInfo?.intake
+          },
+          {
+            targetType: 'specific-student',
+            specificStudentId: user.studentInfo?.studentId
+          }
         ]
       })
         .sort({ createdAt: -1 })
         .limit(5)
-        .populate('user', ['name', 'profileImage']);
+        .populate({
+          path: 'teacher',
+          select: 'name profileImage role'
+        });
 
-      // Get recent job postings
-      const jobs = await Job.find()
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .populate('user', ['name', 'profileImage']);
-
-      // Combine and sort all items
-      const feedItems = [...posts, ...announcements, ...jobs]
-        .sort((a, b) => b.createdAt - a.createdAt);
+      // Combine and sort all items by date
+      const feedItems = [...posts, ...announcements]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       res.json(feedItems);
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
+      console.error('Feed error:', err);
+      res.status(500).json({ 
+        message: 'Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
     }
   }
 };

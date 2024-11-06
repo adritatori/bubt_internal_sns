@@ -11,9 +11,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper to get user's department based on role
+  const getUserDepartment = (user) => {
+    if (!user) return null;
+    
+    switch (user.role) {
+      case 'student':
+        return user.studentInfo?.department;
+      case 'teacher':
+        return user.teacherInfo?.department;
+      case 'alumni':
+        return user.alumniInfo?.department;
+      default:
+        return null;
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) return;
+
       try {
+        setLoading(true);
+        setError(null);
+
+        const userDepartment = getUserDepartment(user);
+        console.log('User Department:', userDepartment);
+
         // Fetch posts and announcements in parallel
         const [postsRes, announcementsRes] = await Promise.all([
           api.get('/posts'),
@@ -21,17 +45,60 @@ const Dashboard = () => {
         ]);
 
         setPosts(postsRes.data);
-        setAnnouncements(announcementsRes.data);
-        setLoading(false);
+
+        // Filter announcements based on department and target type
+        const filteredAnnouncements = announcementsRes.data.filter(announcement => {
+          // First check if announcement is for the user's department
+          if (announcement.department !== userDepartment) {
+            return false;
+          }
+
+          // Then check target type and additional criteria
+          switch (announcement.targetType) {
+            case 'all':
+              return true;
+
+            case 'intake-section':
+              return user.role === 'student' && 
+                     announcement.intake === user.studentInfo?.intake &&
+                     announcement.section === user.studentInfo?.section;
+
+            case 'intake-only':
+              return user.role === 'student' && 
+                     announcement.intake === user.studentInfo?.intake;
+
+            case 'specific-student':
+              return user.role === 'student' && 
+                     announcement.specificStudentId === user.studentInfo?.studentId;
+
+            default:
+              return false;
+          }
+        });
+
+        console.log('Filtered Announcements:', filteredAnnouncements);
+        setAnnouncements(filteredAnnouncements);
+
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError('Error loading dashboard content');
+        setError(err.response?.data?.message || 'Error loading dashboard content');
+      } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [user]);
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center text-gray-600">
+          Please log in to view the dashboard
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -45,6 +112,12 @@ const Dashboard = () => {
     return (
       <div className="text-center text-red-600 p-4">
         {error}
+        <button 
+          onClick={() => window.location.reload()} 
+          className="ml-4 text-blue-500 hover:text-blue-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -69,10 +142,16 @@ const Dashboard = () => {
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Recent Posts</h2>
           {posts.length === 0 ? (
-            <p className="text-gray-600">No posts yet</p>
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <p className="text-gray-600">No posts yet</p>
+            </div>
           ) : (
             posts.map(post => (
-              <PostCard key={post._id} post={post} />
+              <PostCard 
+                key={post._id} 
+                post={post}
+                currentUser={user} 
+              />
             ))
           )}
         </div>
@@ -86,7 +165,7 @@ const Dashboard = () => {
             </h2>
             <div className="space-y-4">
               {announcements.length === 0 ? (
-                <p className="text-gray-600">No announcements</p>
+                <p className="text-gray-600">No announcements for your department</p>
               ) : (
                 announcements.map(announcement => (
                   <AnnouncementCard 

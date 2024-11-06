@@ -17,7 +17,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   
   const profileImageUrl = user.profileImage 
-  ? `http://localhost:5000/uploads/${user.profileImage}`
+  ? `http://localhost:5000/uploads/profiles/${user.profileImage}`
   : '/api/placeholder/128/128';
   console.log(profileImageUrl)
   useEffect(() => {

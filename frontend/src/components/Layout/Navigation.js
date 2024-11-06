@@ -8,7 +8,7 @@ const Navigation = () => {
   return (
     <nav className="bg-blue-500 p-4">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-white text-2xl font-bold">UniSocial</Link>
+        <Link to="/" className="text-white text-2xl font-bold">Career Hub</Link>
         {isAuthenticated && user ? (
           <div className="flex items-center space-x-4">
             <Link to="/" className="text-white hover:text-blue-200">Feed</Link>

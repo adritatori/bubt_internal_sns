@@ -18,23 +18,24 @@ const Register = () => {
       studentId: '',
       intake: '',
       section: '',
-      department: '',
+      department: '', // Changed: will be a dropdown
       passingYear: null 
     },
     teacherInfo: {
       teacherCode: '',
-      department: ''
+      department: '' // Changed: will be a dropdown
     },
     alumniInfo: {
       id: '',
       section: '',
       intake: '',
-      department: '',
+      department: '', // Changed: will be a dropdown
       passingYear: null
     }
   });
 
   const [formError, setFormError] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
 
   const {
     name,
@@ -61,7 +62,7 @@ const Register = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
-      const [field, subField] = name.split('.');
+      const [field, subField] = name.split('.'); // Comma added
       setFormData(prevData => ({
         ...prevData,
         [field]: { ...prevData[field], [subField]: value }
@@ -71,6 +72,8 @@ const Register = () => {
     }
     setFormError('');
   };
+
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -166,14 +169,28 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
-                <input
-                  type="text"
+                <select 
+                  id="department"
                   name="studentInfo.department"
-                  value={studentInfo.department}
-                  onChange={handleChange}
+                  value={selectedDepartment}
+                  onChange={(e) => {
+                    setSelectedDepartment(e.target.value);
+                    setFormData(prevData => ({
+                      ...prevData,
+                      studentInfo: { 
+                        ...prevData.studentInfo,
+                        department: e.target.value
+                      }
+                    }));
+                  }}
                   className={fieldClasses}
-                />
-              </div>
+                >
+                  <option value="">Select Department</option>
+                  <option value="BBA">BBA</option>
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="English">English</option>
+                </select>
+            </div>
               <div>
                 <label htmlFor="passingYear" className="block text-sm font-medium text-gray-700">Passing Year</label>
                 <input
@@ -189,29 +206,43 @@ const Register = () => {
         );
       case 'teacher':
         return (
-          <div className="space-y-4">
-            <div>
+            <div className="space-y-4">
+              <div>
               <label htmlFor="teacherCode" className="block text-sm font-medium text-gray-700">Teacher Code</label>
-              <input
+                <input
                 type="text"
                 name="teacherInfo.teacherCode"
                 value={teacherInfo.teacherCode}
-                onChange={handleChange}
+                  onChange={handleChange}
                 className={fieldClasses}
-              />
-            </div>
-            <div>
+                />
+              </div>
+              <div>
               <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
-              <input
-                type="text"
+              <select
+                id="department"
                 name="teacherInfo.department"
-                value={teacherInfo.department}
-                onChange={handleChange}
+                value={selectedDepartment}
+                onChange={(e) => {
+                  setSelectedDepartment(e.target.value);
+                  setFormData(prevData => ({
+                    ...prevData,
+                    teacherInfo: {
+                      ...prevData.teacherInfo,
+                      department: e.target.value
+                    }
+                  }));
+                }}
                 className={fieldClasses}
-              />
-            </div>
+              >
+                <option value="">Select Department</option>
+                <option value="BBA">BBA</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="English">English</option>
+              </select>
+                </div>
           </div>
-        );
+    );
       case 'alumni':
         return (
           <div className="space-y-4">
@@ -250,13 +281,27 @@ const Register = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700">Department</label>
-                <input
-                  type="text"
+                <select 
+                  id="department"
                   name="alumniInfo.department"
-                  value={alumniInfo.department}
-                  onChange={handleChange}
+                  value={selectedDepartment}
+                  onChange={(e) => {
+                    setSelectedDepartment(e.target.value);
+                    setFormData(prevData => ({
+                      ...prevData,
+                      alumniInfo: { 
+                        ...prevData.alumniInfo,
+                        department: e.target.value
+                      }
+                    }));
+                  }}
                   className={fieldClasses}
-                />
+                >
+                  <option value="">Select Department</option>
+                  <option value="BBA">BBA</option>
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="English">English</option>
+                </select>
               </div>
               <div>
                 <label htmlFor="passingYear" className="block text-sm font-medium text-gray-700">Passing Year</label>
@@ -275,7 +320,7 @@ const Register = () => {
         return null;
     }
   };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">

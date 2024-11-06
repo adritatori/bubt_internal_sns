@@ -3,31 +3,48 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists relative to project root
-const uploadDir = path.join(process.cwd(), 'uploads');
+// Define upload directories
+const uploadDirectories = {
+  root: path.join(process.cwd(), 'uploads'),
+  profiles: path.join(process.cwd(), 'uploads/profiles'),
+  announcements: path.join(process.cwd(), 'uploads/announcements'),
+  posts: path.join(process.cwd(), 'uploads/posts')
+};
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(uploadDir)) {
-  try {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    console.log('Created uploads directory at:', uploadDir);
-  } catch (error) {
-    console.error('Error creating uploads directory:', error);
+// Create all necessary directories
+Object.values(uploadDirectories).forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log('Created directory at:', dir);
+    } catch (error) {
+      console.error('Error creating directory:', error);
+    }
   }
-}
+});
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    // Determine destination based on file type/usage
+    let uploadPath = uploadDirectories.root;
+    
+    if (file.fieldname === 'profileImage') {
+      uploadPath = uploadDirectories.profiles;
+    } else if (file.fieldname === 'announcementImage') {
+      uploadPath = uploadDirectories.announcements;
+    } else if (file.fieldname === 'postImage') {
+      uploadPath = uploadDirectories.posts;
+    }
+    
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    // Create a unique filename
+    // Create a unique filename with type prefix
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    // Get file extension from original filename
     const ext = path.extname(file.originalname);
-    // Combine for final filename
-    cb(null, `${uniqueSuffix}${ext}`);
+    const prefix = file.fieldname.replace('Image', ''); // Remove 'Image' from fieldname
+    cb(null, `${prefix}-${uniqueSuffix}${ext}`);
   }
 });
 
@@ -39,7 +56,6 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    // Return error if file type not allowed
     cb(new Error(`File type ${file.mimetype} not allowed. Allowed types: ${allowedTypes.join(', ')}`), false);
   }
 };
@@ -54,15 +70,37 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Helper function to get file URL
-const getFileUrl = (filename) => {
-  return `/uploads/${filename}`;
+// Helper function to get file URL based on type
+const getFileUrl = (filename, type = '') => {
+  if (!filename) return null;
+  
+  let subDirectory = '';
+  if (type === 'profile') {
+    subDirectory = 'profiles/';
+  } else if (type === 'announcement') {
+    subDirectory = 'announcements/';
+  } else if (type === 'post') {
+    subDirectory = 'posts/';
+  }
+  
+  return `/uploads/${subDirectory}${filename}`;
 };
 
 // Helper function to delete file
-const deleteFile = async (filename) => {
+const deleteFile = async (filename, type = '') => {
   try {
-    const filepath = path.join(uploadDir, filename);
+    let targetDir = uploadDirectories.root;
+    
+    if (type === 'profile') {
+      targetDir = uploadDirectories.profiles;
+    } else if (type === 'announcement') {
+      targetDir = uploadDirectories.announcements;
+    } else if (type === 'post') {
+      targetDir = uploadDirectories.posts;
+    }
+    
+    const filepath = path.join(targetDir, filename);
+    
     if (fs.existsSync(filepath)) {
       await fs.promises.unlink(filepath);
       return true;
@@ -74,9 +112,40 @@ const deleteFile = async (filename) => {
   }
 };
 
+// Helper to clean old files from a directory
+const cleanOldFiles = async (type = '', maxAgeHours = 24) => {
+  try {
+    let targetDir = uploadDirectories.root;
+    
+    if (type === 'profile') {
+      targetDir = uploadDirectories.profiles;
+    } else if (type === 'announcement') {
+      targetDir = uploadDirectories.announcements;
+    } else if (type === 'post') {
+      targetDir = uploadDirectories.posts;
+    }
+
+    const files = await fs.promises.readdir(targetDir);
+    const now = Date.now();
+    const maxAge = maxAgeHours * 60 * 60 * 1000;
+
+    for (const file of files) {
+      const filePath = path.join(targetDir, file);
+      const stats = await fs.promises.stat(filePath);
+      if (now - stats.mtimeMs > maxAge) {
+        await fs.promises.unlink(filePath);
+        console.log(`Deleted old file: ${file}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning old files:', error);
+  }
+};
+
 module.exports = {
   upload,
   getFileUrl,
   deleteFile,
-  uploadDir
+  uploadDirectories,
+  cleanOldFiles
 };

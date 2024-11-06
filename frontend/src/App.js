@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -9,7 +10,6 @@ import Profile from './components/Profile/Profile';
 import EditProfile from './components/Profile/EditProfile';
 import CreatePost from './components/Posts/CreatePost';
 import TeacherAnnouncements from './components/Teacher/TeacherAnnouncements';
-import Feed from './components/Feed/Feed';
 import JobPosting from './components/JobPosting/JobPosting';
 import Achievement from './components/Achievement/Achievement';
 import Notification from './components/Notification/Notification';
@@ -20,6 +20,7 @@ import Layout from './components/Layout/Layout';
 function App() {
   return (
     <AuthProvider>
+      <NotificationProvider>
       <Router>
         <Layout>
           <Routes>
@@ -37,7 +38,7 @@ function App() {
               path="/"
               element={
                 <PrivateRoute>
-                  <Feed />
+                  <Dashboard />
                 </PrivateRoute>
               }
             />
@@ -109,6 +110,7 @@ function App() {
           </Routes>
         </Layout>
       </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

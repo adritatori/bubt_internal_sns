@@ -2,12 +2,33 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const AnnouncementCard = ({ announcement }) => {
+
+  const getProfileImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    
+    // Remove any leading slashes
+    let cleanPath = imagePath.replace(/^\/+/, '');
+    
+    // Remove 'api/' if it exists at the start
+    cleanPath = cleanPath.replace(/^api\//, '');
+    
+    // Construct the full URL
+    const fullUrl = `http://localhost:5000/uploads/profiles/${cleanPath}`;
+    
+    console.log('Constructed image URL:', {
+      originalPath: imagePath,
+      cleanPath: cleanPath,
+      fullUrl: fullUrl
+    });
+    
+    return fullUrl;
+  };
   return (
     <div className="bg-indigo-50 rounded-lg shadow p-4 border-l-4 border-indigo-600">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <img
-            src={announcement.teacher.profileImage || "/default-avatar.png"}
+            src={getProfileImageUrl(announcement.teacher.profileImage) || "/default-avatar.png"}
             alt={announcement.teacher.name}
             className="w-10 h-10 rounded-full"
           />

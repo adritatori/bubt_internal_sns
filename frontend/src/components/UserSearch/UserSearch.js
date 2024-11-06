@@ -81,11 +81,7 @@ const UserSearch = () => {
                 onClick={() => handleProfileClick(result._id)}
               >
                 <div className="flex items-center">
-                  <img
-                    src={result.profileImage || '/default-avatar.png'}
-                    alt={result.name}
-                    className="w-10 h-10 rounded-full mr-3"
-                  />
+                 
                   <div>
                     <p className="font-semibold">{result.name}</p>
                     <p className="text-sm text-gray-500">{result.email}</p>

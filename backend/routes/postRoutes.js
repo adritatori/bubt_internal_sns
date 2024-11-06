@@ -1,47 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { upload } = require('../middleware/upload'); // Destructure upload from the exports
+const { upload } = require('../middleware/upload');
 const postController = require('../controllers/postController');
+const feedController = require('../controllers/feedController'); // Import feedController
 
 // Get all posts
 router.get('/', auth, postController.getPosts);
 
-// Create a post with multiple file uploads
+// Get user-specific posts
+router.get('/user/:userId', auth, postController.getUserPosts);
+
+// Create post
 router.post('/', [
   auth,
-  upload.array('attachments', 5), // Allow up to 5 files
-  (err, req, res, next) => {
-    if (err) {
-      // Handle multer errors
-      if (err.code === 'LIMIT_FILE_COUNT') {
-        return res.status(400).json({ 
-          error: 'Too many files', 
-          message: 'Maximum 5 files allowed' 
-        });
-      }
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ 
-          error: 'File too large', 
-          message: 'File size should not exceed 5MB' 
-        });
-      }
-      return res.status(400).json({ 
-        error: 'Upload error', 
-        message: err.message 
-      });
-    }
-    next();
-  }
+  upload.array('attachments', 5)
 ], postController.createPost);
 
-// Like a post
+// Like post
 router.put('/:id/like', auth, postController.likePost);
 
-// Comment on a post
+// Comment on post
 router.post('/:id/comment', auth, postController.commentPost);
 
-// Delete a post (with file cleanup)
+// Delete post
 router.delete('/:id', auth, postController.deletePost);
+
+// Feed route
+router.get('/feed', auth, feedController.getFeed); // Add the feed route
 
 module.exports = router;

@@ -13,6 +13,8 @@ const announcementRoutes = require('./routes/announcementRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const feedRoutes = require('./routes/feedRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 
 const app = express();
 
@@ -39,6 +41,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
