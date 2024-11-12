@@ -1,18 +1,16 @@
+// components/Jobs/JobBoard.js
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
+import JobCard from './JobCard';
+import JobMatches from './JobMatches';
+import JobPosting from '../JobPosting/JobPosting';
 import api from '../../utils/api';
 
 const JobBoard = () => {
   const { user } = useContext(AuthContext);
   const [jobs, setJobs] = useState([]);
-  const [formData, setFormData] = useState({
-    title: '',
-    company: '',
-    description: '',
-    requirements: '',
-    location: '',
-    type: 'full-time'
-  });
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -21,106 +19,64 @@ const JobBoard = () => {
 
   const fetchJobs = async () => {
     try {
-      const res = await api.get('/posts?type=job');
+      setLoading(true);
+      const res = await api.get('/jobs');
       setJobs(res.data);
     } catch (err) {
       setError('Error fetching jobs');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleApply = async (jobId) => {
     try {
-      const res = await api.post('/posts', {
-        ...formData,
-        postType: 'job',
-        content: JSON.stringify({
-          ...formData,
-          postedBy: user.name,
-          postedAt: new Date()
-        })
-      });
-      setJobs([res.data, ...jobs]);
-      setFormData({
-        title: '',
-        company: '',
-        description: '',
-        requirements: '',
-        location: '',
-        type: 'full-time'
-      });
+      await api.put(`/jobs/${jobId}/apply`);
+      // Refresh jobs list after applying
+      fetchJobs();
     } catch (err) {
-      setError('Error posting job');
+      setError('Error applying for job');
     }
   };
+
+  const handleViewMatches = (jobId) => {
+    setSelectedJob(jobId);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div>
-      {(user.role === 'teacher' || user.role === 'alumni') && (
-        <div>
-          <h2>Post a Job</h2>
-          {error && <div>{error}</div>}
-          
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              placeholder="Job Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+    <div className="container mx-auto px-4 py-8">
+      {user.role === 'alumni' && <JobPosting onJobPosted={fetchJobs} />}
+      
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Available Jobs</h2>
+        <div className="space-y-4">
+          {jobs.map(job => (
+            <JobCard
+              key={job._id}
+              job={job}
+              currentUser={user}
+              onApply={handleApply}
+              onViewMatches={handleViewMatches}
             />
-            <input
-              type="text"
-              placeholder="Company"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-            <textarea
-              placeholder="Job Description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-            <textarea
-              placeholder="Requirements"
-              value={formData.requirements}
-              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Location"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            />
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            >
-              <option value="full-time">Full Time</option>
-              <option value="part-time">Part Time</option>
-              <option value="internship">Internship</option>
-            </select>
-            <button type="submit">Post Job</button>
-          </form>
+          ))}
+        </div>
+      </div>
+
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full m-4 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Matching Candidates</h2>
+              <button onClick={() => setSelectedJob(null)}>Close</button>
+            </div>
+            <JobMatches jobId={selectedJob} />
+          </div>
         </div>
       )}
-
-      <div>
-        <h2>Available Jobs</h2>
-        {jobs.map(job => {
-          const jobDetails = JSON.parse(job.content);
-          return (
-            <div key={job._id}>
-              <h3>{jobDetails.title}</h3>
-              <h4>{jobDetails.company}</h4>
-              <p>Location: {jobDetails.location}</p>
-              <p>Type: {jobDetails.type}</p>
-              <p>Description: {jobDetails.description}</p>
-              <p>Requirements: {jobDetails.requirements}</p>
-              <p>Posted by: {job.user.name}</p>
-              <p>Posted: {new Date(job.createdAt).toLocaleDateString()}</p>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };

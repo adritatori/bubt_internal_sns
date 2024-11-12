@@ -3,6 +3,10 @@ const express = require('express');
 const connectDB = require('./config/db');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const compression = require('compression');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -14,41 +18,163 @@ const jobRoutes = require('./routes/jobRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const feedRoutes = require('./routes/feedRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const jobMatchingRoutes = require('./routes/jobMatchingRoutes');
 
-
+// Initialize express
 const app = express();
 
-// Connect to Database
-connectDB();
+// Connect to Database with retry logic
+const initializeDB = async () => {
+  try {
+    await connectDB();
+    console.log('MongoDB Connected Successfully');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    // Retry connection after 5 seconds
+    setTimeout(initializeDB, 5000);
+  }
+};
 
-// Init Middleware
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'x-auth-token']
+initializeDB();
+
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      scriptSrc: ["'self'"]
+    }
+  }
 }));
-app.use(express.json({ extended: false }));
-app.use(express.urlencoded({ extended: true }));
 
-// Define Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/jobs', jobRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api/feed', feedRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/notifications', notificationRoutes);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
 });
 
-const PORT = process.env.PORT || 5000;
+// Apply rate limiter to all routes
+app.use('/api/', limiter);
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// Logging in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
+  exposedHeaders: ['x-auth-token'],
+  maxAge: 600 // 10 minutes
+};
+
+app.use(cors(corsOptions));
+
+// Body parser middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Compression middleware
+app.use(compression());
+
+// Static file serving
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d',
+  etag: true
+}));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP', timestamp: new Date() });
+});
+
+// API Routes
+const apiRoutes = express.Router();
+
+apiRoutes.use('/auth', authRoutes);
+apiRoutes.use('/users', userRoutes);
+apiRoutes.use('/posts', postRoutes);
+apiRoutes.use('/profile', profileRoutes);
+apiRoutes.use('/announcements', announcementRoutes);
+apiRoutes.use('/jobs', jobRoutes);
+apiRoutes.use('/achievements', achievementRoutes);
+apiRoutes.use('/feed', feedRoutes);
+apiRoutes.use('/notifications', notificationRoutes);
+apiRoutes.use('/job-matching', jobMatchingRoutes);
+
+// Mount all routes under /api
+app.use('/api', apiRoutes);
+
+// Global error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', {
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method
+  });
+
+  // Handle different types of errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Validation Error',
+      details: err.errors
+    });
+  }
+
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({
+      error: 'Unauthorized Access'
+    });
+  }
+
+  if (err.name === 'NotFoundError') {
+    return res.status(404).json({
+      error: 'Resource Not Found'
+    });
+  }
+
+  // Default error response
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'development' 
+      ? err.message 
+      : 'Internal Server Error'
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+  // Don't crash the server, but log the error
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Gracefully shutdown the server
+  process.exit(1);
+});
+
+// Start server
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+module.exports = app;

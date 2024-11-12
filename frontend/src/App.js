@@ -10,7 +10,8 @@ import Profile from './components/Profile/Profile';
 import EditProfile from './components/Profile/EditProfile';
 import CreatePost from './components/Posts/CreatePost';
 import TeacherAnnouncements from './components/Teacher/TeacherAnnouncements';
-import JobPosting from './components/JobPosting/JobPosting';
+import JobBoard from './components/Jobs/JobBoard';
+import JobPosting from './components/JobPosting/JobPosting'
 import Achievement from './components/Achievement/Achievement';
 import Notification from './components/Notification/Notification';
 import UserSearch from './components/UserSearch/UserSearch';
@@ -75,14 +76,24 @@ function App() {
                 </PrivateRoute>
               }
             />
-            <Route
-              path="/job-posting"
-              element={
-                <PrivateRoute>
-                  <JobPosting />
-                </PrivateRoute>
-              }
-            />
+      
+<Route
+  path="/jobs"
+  element={
+    <PrivateRoute>
+      <JobBoard />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/jobs/post"
+  element={
+    <PrivateRoute>
+      <JobPosting />
+    </PrivateRoute>
+  }
+/>
             <Route
               path="/achievements"
               element={
