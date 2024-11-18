@@ -106,7 +106,7 @@ apiRoutes.use('/jobs', jobRoutes);
 apiRoutes.use('/achievements', achievementRoutes);
 apiRoutes.use('/feed', feedRoutes);
 apiRoutes.use('/notifications', notificationRoutes);
-apiRoutes.use('/job-matching', jobMatchingRoutes);
+apiRoutes.use('/api/job-matching', jobMatchingRoutes);
 
 // Mount all routes under /api
 app.use('/api', apiRoutes);

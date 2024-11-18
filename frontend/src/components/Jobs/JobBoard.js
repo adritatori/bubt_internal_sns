@@ -10,6 +10,7 @@ const JobBoard = () => {
   const { user } = useContext(AuthContext);
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [showMatches, setShowMatches] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -29,51 +30,54 @@ const JobBoard = () => {
     }
   };
 
-  const handleApply = async (jobId) => {
-    try {
-      await api.put(`/jobs/${jobId}/apply`);
-      // Refresh jobs list after applying
-      fetchJobs();
-    } catch (err) {
-      setError('Error applying for job');
-    }
-  };
-
   const handleViewMatches = (jobId) => {
     setSelectedJob(jobId);
+    setShowMatches(true);
+  };
+
+  const handleCloseMatches = () => {
+    setShowMatches(false);
+    setSelectedJob(null);
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {user.role === 'alumni' && <JobPosting onJobPosted={fetchJobs} />}
-      
+      {/* Job Posting Form for Alumni */}
+      {user.role === 'alumni' && (
+        <JobPosting onJobPosted={fetchJobs} />
+      )}
+
+      {/* Jobs List */}
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Available Jobs</h2>
-        <div className="space-y-4">
+        <h2 className="text-2xl font-bold mb-6">Available Jobs</h2>
+        <div className="space-y-6">
           {jobs.map(job => (
             <JobCard
               key={job._id}
               job={job}
               currentUser={user}
-              onApply={handleApply}
-              onViewMatches={handleViewMatches}
+              onViewMatches={() => handleViewMatches(job._id)}
             />
           ))}
         </div>
       </div>
 
-      {selectedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full m-4 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Matching Candidates</h2>
-              <button onClick={() => setSelectedJob(null)}>Close</button>
-            </div>
-            <JobMatches jobId={selectedJob} />
+      {/* Matches Modal */}
+      {showMatches && selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <JobMatches 
+              jobId={selectedJob} 
+              onClose={handleCloseMatches}
+            />
           </div>
         </div>
       )}

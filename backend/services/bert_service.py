@@ -40,6 +40,8 @@ def batch_similarity():
         data = request.json
         job_description = data['job_description']
         student_profiles = data['student_profiles']
+        print(f"Received job description: {job_description}") # Log the job description
+        print(f"Received {len(student_profiles)} student profiles") # Log the number of student profiles
 
         # Calculate embeddings
         job_embedding = model.encode(job_description, convert_to_tensor=True)

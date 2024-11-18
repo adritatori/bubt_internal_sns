@@ -24,53 +24,45 @@ const JobSchema = new mongoose.Schema({
     required: true
   },
   requirements: [{
-    type: String,
-    required: true
+    type: String
   }],
   requiredSkills: [{
-    type: String,
-    required: true
+    type: String
   }],
   preferredSkills: [{
     type: String
   }],
-  // New fields for job details
   education: {
     type: String,
-    required: true,
-    enum: ['Bachelors', 'Masters', 'PhD', 'Any']
+    enum: ['Bachelors', 'Masters', 'PhD', 'Any'],
+    default: 'Any'
   },
   experienceLevel: {
     type: String,
-    required: true,
-    enum: ['Entry Level', 'Mid Level', 'Senior Level']
+    enum: ['Entry Level', 'Mid Level', 'Senior Level'],
+    default: 'Entry Level'
   },
   salary: {
     range: {
-      min: Number,
-      max: Number
+      min: {
+        type: Number,
+        default: 0
+      },
+      max: {
+        type: Number,
+        default: 0
+      }
     },
-    type: String, // monthly, yearly
-    negotiable: Boolean
-  },
-  matchedCandidates: [{
-    student: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    matchScore: {
-      total: Number,
-      skillsMatch: Number,
-      educationMatch: Number,
-      achievementsMatch: Number
-    },
-    status: {
+    type: {
       type: String,
-      enum: ['pending', 'shortlisted', 'rejected', 'hired'],
-      default: 'pending'
+      enum: ['monthly', 'yearly'],
+      default: 'monthly'
     },
-    appliedDate: Date
-  }],
+    negotiable: {
+      type: Boolean,
+      default: true
+    }
+  },
   type: {
     type: String,
     enum: ['full-time', 'part-time', 'internship', 'contract', 'remote'],
@@ -82,7 +74,8 @@ const JobSchema = new mongoose.Schema({
     default: 'open'
   },
   applicationDeadline: {
-    type: Date
+    type: Date,
+    required: true
   },
   createdAt: {
     type: Date,
@@ -92,20 +85,6 @@ const JobSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
-});
-
-// Add index for better search performance
-JobSchema.index({ 
-  title: 'text', 
-  description: 'text', 
-  company: 'text',
-  requiredSkills: 'text'
-});
-
-// Update timestamp on save
-JobSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
 });
 
 module.exports = mongoose.model('Job', JobSchema);

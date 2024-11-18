@@ -1,38 +1,99 @@
+// components/Navigation/Navigation.js
 import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext';
 
 const Navigation = () => {
   const { user, isAuthenticated, logout } = useContext(AuthContext);
+  const location = useLocation();
+
+  // Helper function to determine if link is active
+  const isActive = (path) => location.pathname === path;
+
+  // Navigation items based on user role
+  const getNavLinks = () => {
+    const commonLinks = [
+      { to: "/", label: "Dashboard" },
+      { to: "/profile", label: "Profile" },
+      { to: "/notifications", label: "Notifications" },
+      { to: "/search", label: "Search Users" }
+    ];
+
+    const roleSpecificLinks = {
+      student: [
+        { to: "/jobs", label: "View Jobs" },
+        { to: "/achievements", label: "Achievements" }
+      ],
+      teacher: [
+        { to: "/announcements", label: "Announcements" },
+        { to: "/jobs", label: "Manage Jobs" },
+        { to: "/jobs/post", label: "Post Job" },
+        { to: "/job-matches", label: "View Matches" }
+      ],
+      alumni: [
+        { to: "/jobs", label: "Manage Jobs" },
+        { to: "/jobs/post", label: "Post Job" },
+        { to: "/job-matches", label: "View Matches" }
+      ]
+    };
+
+    return [
+      ...commonLinks,
+      ...(roleSpecificLinks[user?.role] || [])
+    ];
+  };
 
   return (
-    <nav className="bg-blue-500 p-4">
+    <nav className="bg-blue-600 p-4 shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-white text-2xl font-bold">Career Hub</Link>
+        <Link to="/" className="text-white text-2xl font-bold">
+          Career Hub
+        </Link>
+
         {isAuthenticated && user ? (
           <div className="flex items-center space-x-4">
-            <Link to="/" className="text-white hover:text-blue-200">Feed</Link>
-            <Link to="/profile" className="text-white hover:text-blue-200">Profile</Link>
-            <Link to="/create-post" className="text-white hover:text-blue-200">Create Post</Link>
-            {user.role === 'student' && (
-              <Link to="/achievements" className="text-white hover:text-blue-200">Achievements</Link>
-            )}
-            {user.role === 'teacher' && (
-              <Link to="/announcements" className="text-white hover:text-blue-200">Announcements</Link>
-            )}
-            {user.role === 'alumni' && (
-              <Link to="/job-posting" className="text-white hover:text-blue-200">Post Job</Link>
-            )}
-            <Link to="/notifications" className="text-white hover:text-blue-200">Notifications</Link>
-            <Link to="/search" className="text-white hover:text-blue-200">Search Users</Link>
-            <button onClick={logout} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            {getNavLinks().map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  isActive(link.to)
+                    ? 'bg-blue-700 text-white'
+                    : 'text-blue-100 hover:bg-blue-500 hover:text-white'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <button
+              onClick={logout}
+              className="ml-4 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+            >
               Logout
             </button>
           </div>
         ) : (
           <div className="flex items-center space-x-4">
-            <Link to="/login" className="text-white hover:text-blue-200">Login</Link>
-            <Link to="/register" className="text-white hover:text-blue-200">Register</Link>
+            <Link
+              to="/login"
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/login')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-500 hover:text-white'
+              }`}
+            >
+              Login
+            </Link>
+            <Link
+              to="/register"
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/register')
+                  ? 'bg-blue-700 text-white'
+                  : 'text-blue-100 hover:bg-blue-500 hover:text-white'
+              }`}
+            >
+              Register
+            </Link>
           </div>
         )}
       </div>

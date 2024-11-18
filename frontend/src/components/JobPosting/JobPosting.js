@@ -2,121 +2,306 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import api from '../../utils/api';
 
-const JobPosting = () => {
+const JobPosting = ({ onJobPosted }) => {
   const { user } = useContext(AuthContext);
-  const [title, setTitle] = useState('');
-  const [company, setCompany] = useState('');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
-  const [requirements, setRequirements] = useState('');
-  const [type, setType] = useState('full-time');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    company: '',
+    description: '',
+    location: '',
+    type: 'full-time',
+    requirements: [],
+    requiredSkills: [],
+    preferredSkills: [],
+    education: 'Bachelors',
+    experienceLevel: 'Entry Level',
+    salary: {
+      range: {
+        min: '',
+        max: ''
+      },
+      type: 'monthly',
+      negotiable: true
+    },
+    applicationDeadline: ''
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      await api.post('/jobs', {
-        title,
-        company,
-        location,
-        description,
-        requirements: requirements.split(',').map(req => req.trim()),
-        type
+      const jobData = {
+        title: formData.title,
+        company: formData.company,
+        location: formData.location,
+        description: formData.description,
+        type: formData.type,
+        education: formData.education,
+        experienceLevel: formData.experienceLevel,
+        applicationDeadline: formData.applicationDeadline,
+        requirements: Array.isArray(formData.requirements) 
+          ? formData.requirements 
+          : formData.requirements.split(',').map(req => req.trim()).filter(Boolean),
+        requiredSkills: Array.isArray(formData.requiredSkills)
+          ? formData.requiredSkills
+          : formData.requiredSkills.split(',').map(skill => skill.trim()).filter(Boolean),
+        preferredSkills: Array.isArray(formData.preferredSkills)
+          ? formData.preferredSkills
+          : formData.preferredSkills.split(',').map(skill => skill.trim()).filter(Boolean),
+        salary: {
+          range: {
+            min: parseInt(formData.salary.range.min) || 0,
+            max: parseInt(formData.salary.range.max) || 0
+          },
+          type: formData.salary.type,
+          negotiable: formData.salary.negotiable
+        },
+        status: 'open'
+      };
+
+      const res = await api.post('/jobs', jobData);
+      
+      if (onJobPosted) {
+        onJobPosted(res.data);
+      }
+
+      // Reset form
+      setFormData({
+        title: '',
+        company: '',
+        description: '',
+        location: '',
+        type: 'full-time',
+        requirements: [],
+        requiredSkills: [],
+        preferredSkills: [],
+        education: 'Bachelors',
+        experienceLevel: 'Entry Level',
+        salary: {
+          range: { min: '', max: '' },
+          type: 'monthly',
+          negotiable: true
+        },
+        applicationDeadline: ''
       });
-      // Clear form and show success message
-      setTitle('');
-      setCompany('');
-      setLocation('');
-      setDescription('');
-      setRequirements('');
-      setType('full-time');
-      setError('');
-      // You might want to add some feedback to the user here
+
     } catch (err) {
-      setError('Error posting job. Please try again.');
-      console.error('Error posting job:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError(
+        err.response?.data?.message || 
+        'Error posting job. Please make sure all required fields are filled correctly.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   if (user.role !== 'alumni') {
-    return <div>Only alumni can post jobs.</div>;
+    return null;
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 p-4 bg-white shadow rounded-lg">
-      <h2 className="text-2xl font-bold mb-4">Post a Job</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">Job Title</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            required
-          />
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 className="text-2xl font-bold mb-6">Post a New Job</h2>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
-        <div className="mb-4">
-          <label htmlFor="company" className="block text-sm font-medium text-gray-700">Company</label>
-          <input
-            type="text"
-            id="company"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            required
-          />
+      )}
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Job Title</label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Company</label>
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-          <input
-            type="text"
-            id="location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+
+        {/* Description and Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Job Description</label>
           <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            rows="4"
-            required
-          ></textarea>
-        </div>
-        <div className="mb-4">
-          <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">Requirements (comma-separated)</label>
-          <input
-            type="text"
-            id="requirements"
-            value={requirements}
-            onChange={(e) => setRequirements(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={4}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             required
           />
         </div>
-        <div className="mb-4">
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700">Job Type</label>
-          <select
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          >
-            <option value="full-time">Full-time</option>
-            <option value="part-time">Part-time</option>
-            <option value="internship">Internship</option>
-            <option value="contract">Contract</option>
-          </select>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Location</label>
+          <input
+            type="text"
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
         </div>
-        <button type="submit" className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-          Post Job
+
+        {/* Skills and Requirements */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Required Skills (comma-separated)</label>
+            <input
+              type="text"
+              value={Array.isArray(formData.requiredSkills) ? formData.requiredSkills.join(', ') : formData.requiredSkills}
+              onChange={(e) => setFormData({ ...formData, requiredSkills: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Preferred Skills (comma-separated)</label>
+            <input
+              type="text"
+              value={Array.isArray(formData.preferredSkills) ? formData.preferredSkills.join(', ') : formData.preferredSkills}
+              onChange={(e) => setFormData({ ...formData, preferredSkills: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Additional Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Education Level</label>
+            <select
+              value={formData.education}
+              onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="Bachelors">Bachelor's Degree</option>
+              <option value="Masters">Master's Degree</option>
+              <option value="PhD">PhD</option>
+              <option value="Any">Any</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Experience Level</label>
+            <select
+              value={formData.experienceLevel}
+              onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="Entry Level">Entry Level</option>
+              <option value="Mid Level">Mid Level</option>
+              <option value="Senior Level">Senior Level</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Job Type</label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="full-time">Full Time</option>
+              <option value="part-time">Part Time</option>
+              <option value="internship">Internship</option>
+              <option value="contract">Contract</option>
+              <option value="remote">Remote</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Salary Range */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Minimum Salary</label>
+            <input
+              type="number"
+              value={formData.salary.range.min}
+              onChange={(e) => setFormData({
+                ...formData,
+                salary: {
+                  ...formData.salary,
+                  range: { ...formData.salary.range, min: e.target.value }
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Maximum Salary</label>
+            <input
+              type="number"
+              value={formData.salary.range.max}
+              onChange={(e) => setFormData({
+                ...formData,
+                salary: {
+                  ...formData.salary,
+                  range: { ...formData.salary.range, max: e.target.value }
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Salary Type</label>
+            <select
+              value={formData.salary.type}
+              onChange={(e) => setFormData({
+                ...formData,
+                salary: { ...formData.salary, type: e.target.value }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Application Deadline</label>
+          <input
+            type="date"
+            value={formData.applicationDeadline}
+            onChange={(e) => setFormData({ ...formData, applicationDeadline: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full ${
+            loading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          } text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+        >
+          {loading ? 'Posting...' : 'Post Job'}
         </button>
       </form>
     </div>
