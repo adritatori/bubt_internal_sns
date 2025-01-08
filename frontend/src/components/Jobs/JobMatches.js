@@ -1,7 +1,7 @@
 // components/Jobs/JobMatchesPage.js
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import api from '../../utils/api';
+import pythonApi from '../../utils/api';
 
 const JobMatchesPage = () => {
   const { user } = useContext(AuthContext);
@@ -17,10 +17,7 @@ const JobMatchesPage = () => {
 
   const fetchAlumniJobs = async () => {
     try {
-      const res = await api.get('/jobs?user=' + user._id);
-      if (res.status !== 200) {
-        throw new Error(`Error fetching jobs: ${res.status} ${res.statusText}`);
-      }
+      const res = await pythonApi.get('/jobs?user=' + user._id);
       setJobs(res.data);
     } catch (err) {
       setError(`Error fetching your jobs: ${err.message}`);
@@ -34,31 +31,25 @@ const JobMatchesPage = () => {
     try {
       setLoading(true);
       console.log(`Fetching matches for job ID: ${jobId}`);
-
-      const res = await api.get(`/job-matching/${jobId}/matches`);
-
-      // More robust error checking
-      if (!res.ok) {
-        const errorData = await res.json(); 
-        const errorMessage = errorData?.msg || errorData?.error || res.statusText; 
-        throw new Error(`Error fetching matches: ${res.status} - ${errorMessage}`); 
+      
+      const res = await pythonApi.get(`/jobs/${jobId}/matches`); // Updated endpoint
+      
+      if (res.data) {
+        setMatches(res.data);
+        setSelectedJob(jobId);
+      } else {
+        throw new Error('Invalid response data from server');
       }
-
-      const data = await res.json(); 
-      if (!data || !Array.isArray(data)) { 
-          throw new Error('Invalid response data from server');
-      }
-      setMatches(data);
-      setSelectedJob(jobId);
     } catch (err) {
       setError(`Error fetching matches: ${err.message}`);
-      console.error("Error in fetchMatches:", err); 
+      console.error("Error in fetchMatches:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user || user.role !== 'alumni') {
+
+  if (!user) {
     return <div>Access denied. Alumni only.</div>;
   }
 

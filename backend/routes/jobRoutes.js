@@ -35,7 +35,6 @@ router.get('/:id', auth, async (req, res) => {
 // @desc    Get matching students for a job
 // @access  Private
 router.get('/:jobId/matches', auth, jobMatchingController.matchStudentsWithJob);
-
 // @route   PUT api/jobs/:jobId/apply
 // @desc    Apply for a job
 // @access  Private (Students only)

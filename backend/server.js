@@ -43,10 +43,13 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      scriptSrc: ["'self'"]
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'], // Updated to be more permissive for images
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'", "http://localhost:*", "https://*"] // Added for local development
     }
-  }
+  },
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Added to allow cross-origin resource sharing
+  crossOriginEmbedderPolicy: false // Disabled to allow loading of cross-origin resources
 }));
 
 // Rate limiting
@@ -66,12 +69,17 @@ if (process.env.NODE_ENV === 'development') {
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000', // Frontend
+    'http://localhost:4000', // Image server
+    'http://localhost:5001', // Python server
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization'],
   exposedHeaders: ['x-auth-token'],
-  maxAge: 600 // 10 minutes
+  maxAge: 600
 };
 
 app.use(cors(corsOptions));
@@ -85,8 +93,11 @@ app.use(compression());
 
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '1d',
-  etag: true
+  setHeaders: (res, path) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day cache
+  }
 }));
 
 // Health check endpoint
