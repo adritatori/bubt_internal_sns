@@ -22,7 +22,7 @@ def preprocess_text(text, options):
         for section in sections:
             if 'skills:' in section.lower():
                 weighted_sections.extend([section] * 3)  # Triple weight for skills
-            elif 'experience:' in section.lower():
+            elif 'bio:' in section.lower():
                 weighted_sections.extend([section] * 2)  # Double weight for experience
             else:
                 weighted_sections.append(section)

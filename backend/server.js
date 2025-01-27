@@ -104,7 +104,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', timestamp: new Date() });
 });
-
+profileRoutes
 // API Routes
 const apiRoutes = express.Router();
 

@@ -100,9 +100,9 @@ const JobPosting = ({ onJobPosted }) => {
     }
   };
 
-  if (user.role !== 'alumni') {
-    return null;
-  }
+  // if (user.role !== 'alumni') {
+  //   return null;
+  // }
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-8">

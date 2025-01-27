@@ -31,7 +31,7 @@ const Navigation = () => {
         { to: "/job-matches", label: "View Matches" }
       ],
       alumni: [
-        { to: "/jobs", label: "Manage Jobs" },
+        { to: "/jobs", label: "View Jobs" },
         { to: "/jobs/post", label: "Post Job" },
         { to: "/job-matches", label: "View Matches" }
       ]

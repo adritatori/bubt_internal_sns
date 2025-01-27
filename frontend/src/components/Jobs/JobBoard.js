@@ -1,9 +1,9 @@
-// components/Jobs/JobBoard.js
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import JobCard from './JobCard';
 import JobMatches from './JobMatches';
 import JobPosting from '../JobPosting/JobPosting';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./AlertDialog";
 import api from '../../utils/api';
 
 const JobBoard = () => {
@@ -13,6 +13,8 @@ const JobBoard = () => {
   const [showMatches, setShowMatches] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [selectedJobHolder, setSelectedJobHolder] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -40,6 +42,16 @@ const JobBoard = () => {
     setSelectedJob(null);
   };
 
+  const handleApply = (job) => {
+    setSelectedJobHolder(job.user);
+    setShowApplyDialog(true);
+  };
+
+  const handleVisitProfile = () => {
+    // Navigate to job holder's profile
+    window.location.href = `/profile/${selectedJobHolder._id}`;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -65,6 +77,7 @@ const JobBoard = () => {
               job={job}
               currentUser={user}
               onViewMatches={() => handleViewMatches(job._id)}
+              onApply={() => handleApply(job)}
             />
           ))}
         </div>
@@ -81,6 +94,24 @@ const JobBoard = () => {
           </div>
         </div>
       )}
+
+      {/* Apply Dialog */}
+      <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply for Position</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please send your application to: {selectedJobHolder?.email}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={handleVisitProfile}>
+              Visit Profile
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

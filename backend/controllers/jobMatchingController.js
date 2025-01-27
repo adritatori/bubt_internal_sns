@@ -3,7 +3,7 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const Profile = require('../models/Profile');
 const { batchCalculateSimilarity } = require('../utils/modelUtils');
-const mongoose = require('mongoose'); // Import mongoose
+const mongoose = require('mongoose');
 
 const jobMatchingController = {
   matchStudentsWithJob: async (req, res) => {
@@ -22,42 +22,49 @@ const jobMatchingController = {
         return res.status(404).json({ msg: 'Job not found' });
       }
 
-      // Get all students with their profiles
-      const students = await User.find({ role: 'student' })
+      // Get all profiles and populate user data
+      const studentProfiles = await Profile.find()
         .populate({
-          path: 'profile',
-          select: 'skills bio achievements studentInfo'
+          path: 'user',
+          match: { role: 'student' },
+          select: 'name email profileImage role'
         });
 
-      // Prepare job context and student profiles
+      // Filter out profiles where user is null (not a student)
+      const validStudentProfiles = studentProfiles.filter(profile => profile.user !== null);
+
+      // Prepare job context
       const jobContext = `
-        ${job.title}
-        ${job.description}
-        ${job.requiredSkills?.join(' ') || ''}
-        ${job.type}
+        Title: ${job.title}
+        Description: ${job.description}
+        Required Skills: ${job.requiredSkills?.join(', ') || ''}
+        Job Type: ${job.type}
       `.trim();
 
-      const studentProfiles = students.map(student => `
-        ${student.profile?.skills?.join(' ') || ''}
-        ${student.profile?.bio || ''}
-        ${student.profile?.achievements?.join(' ') || ''}
-        ${student.studentInfo?.department || ''}
+      // Prepare student profiles for matching
+      const profilesForMatching = validStudentProfiles.map(profile => `
+        Bio: ${profile.bio || ''}
+        Department: ${profile.department || ''}
+        Skills: ${profile.skills?.join(', ') || ''}
+        Student ID: ${profile.studentInfo?.studentId || ''}
+        Batch: ${profile.studentInfo?.batch || ''}
+        CGPA: ${profile.studentInfo?.cgpa || ''}
       `.trim());
 
-      // Get similarity scores
-      const similarities = await batchCalculateSimilarity(jobContext, studentProfiles);
+      const similarities = await batchCalculateSimilarity(jobContext, profilesForMatching);
 
-      // Prepare matches
+      // Create matches with complete profile information
       const matches = similarities
         .map((sim, index) => ({
           student: {
-            _id: students[index]._id,
-            name: students[index].name,
-            email: students[index].email,
-            profileImage: students[index].profileImage,
-            department: students[index].studentInfo?.department,
-            skills: students[index].profile?.skills || [],
-            achievements: students[index].profile?.achievements || []
+            _id: validStudentProfiles[index].user._id,
+            name: validStudentProfiles[index].user.name,
+            email: validStudentProfiles[index].user.email,
+            profileImage: validStudentProfiles[index].user.profileImage,
+            department: validStudentProfiles[index].department,
+            skills: validStudentProfiles[index].skills || [],
+            studentInfo: validStudentProfiles[index].studentInfo || {},
+            bio: validStudentProfiles[index].bio || ''
           },
           matchScore: sim.similarity
         }))
@@ -74,45 +81,42 @@ const jobMatchingController = {
       });
     }
   },
+
   matchJobsWithStudent: async (req, res) => {
     try {
       const { studentId } = req.params;
-      
-      // Get student details
-      const student = await User.findById(studentId)
-        .populate({
-          path: 'profile',
-          select: 'skills bio achievements studentInfo'
-        });
 
-      if (!student) {
-        return res.status(404).json({ msg: 'Student not found' });
+      // Find profile by user ID and populate user data
+      const studentProfile = await Profile.findOne({ 
+        user: studentId 
+      }).populate('user', 'name email profileImage role');
+
+      if (!studentProfile || !studentProfile.user) {
+        return res.status(404).json({ msg: 'Student profile not found' });
       }
 
-      // Get all active jobs
       const activeJobs = await Job.find({ status: 'open' })
         .populate('user', 'name email profileImage');
 
-      // Prepare student profile for matching
+      // Prepare student context with complete profile information
       const studentContext = `
-        ${student.profile?.skills?.join(' ') || ''}
-        ${student.profile?.bio || ''}
-        ${student.profile?.achievements?.join(' ') || ''}
-        ${student.studentInfo?.department || ''}
-      `;
+        Bio: ${studentProfile.bio || ''}
+        Department: ${studentProfile.department || ''}
+        Skills: ${studentProfile.skills?.join(', ') || ''}
+        Student ID: ${studentProfile.studentInfo?.studentId || ''}
+        Batch: ${studentProfile.studentInfo?.batch || ''}
+        CGPA: ${studentProfile.studentInfo?.cgpa || ''}
+      `.trim();
 
-      // Prepare job descriptions for matching
       const jobContexts = activeJobs.map(job => `
-        ${job.title}
-        ${job.description}
-        ${job.requiredSkills.join(' ')}
-        ${job.type}
-      `);
+        Title: ${job.title}
+        Description: ${job.description}
+        Required Skills: ${job.requiredSkills.join(', ')}
+        Job Type: ${job.type}
+      `.trim());
 
-      // Get similarity scores
       const similarities = await batchCalculateSimilarity(studentContext, jobContexts);
 
-      // Prepare matches
       const matches = similarities
         .map((sim, index) => ({
           job: {
@@ -121,19 +125,20 @@ const jobMatchingController = {
             company: activeJobs[index].company,
             type: activeJobs[index].type,
             requiredSkills: activeJobs[index].requiredSkills,
+            description: activeJobs[index].description,
             user: activeJobs[index].user
           },
           matchScore: sim.similarity
         }))
-      .filter(match => match.matchScore > 0.6)
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 10);
+        .filter(match => match.matchScore > 0.6)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 10);
 
-    res.json(matches);
-  } catch (err) {
-    console.error('Error in matchJobsWithStudent:', err);
-    res.status(500).json({ msg: 'Server Error' });
-  }
+      res.json(matches);
+    } catch (err) {
+      console.error('Error in matchJobsWithStudent:', err);
+      res.status(500).json({ msg: 'Server Error' });
+    }
   }
 };
 
